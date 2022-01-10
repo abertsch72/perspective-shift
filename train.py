@@ -15,26 +15,29 @@ from transformers import (
 from tabulate import tabulate
 import nltk
 from datetime import datetime
+import wandb
 
-from gen_data import data_extraction
-encoder_max_length = 64
-decoder_max_length = 64
+from gen_data import data_extraction, data_extraction_aqa, data_extraction_masking
+wandb.init(group="gormley_lab", project="perspective-shift-baselines")
+encoder_max_length = 256
+decoder_max_length = 256
 WARMUP_STEPS = 0
 model_name = "facebook/bart-base"
 
 model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-train_data, test_data = data_extraction()
+train_data, test_data = data_extraction_masking()
 nltk.download("punkt", quiet=True)
 metric = datasets.load_metric("rouge")
 
-train_data_txt, validation_data_txt = datasets.Dataset.from_dict(train_data), datasets.Dataset.from_dict(test_data)
-print(train_data_txt)
+train_data_txt = datasets.Dataset.from_dict(train_data)
+validation_data_txt = datasets.Dataset.from_dict(test_data)
+
 NUM_EPOCHS = 10
 
+
 def batch_tokenize_preprocess(batch, tokenizer, max_source_length, max_target_length, train=False):
-    print(batch)
     source, target = batch['original'], batch['shifted']
 
     source_tokenized = tokenizer(
@@ -61,7 +64,6 @@ train_data = train_data_txt.map(
     remove_columns=train_data_txt.column_names,
 
 )
-print(train_data)
 
 validation_data = validation_data_txt.map(
     lambda batch: batch_tokenize_preprocess(
@@ -71,7 +73,6 @@ validation_data = validation_data_txt.map(
     remove_columns=validation_data_txt.column_names,
 )
 
-print(validation_data)
 
 
 def postprocess_text(preds, labels):
@@ -177,11 +178,16 @@ def generate_summary(test_samples, model):
 
 #model_before_tuning = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
-test_samples = validation_data_txt.select(range(16))
+test_samples = validation_data_txt #.select(range(16))
 
 #summaries_before_tuning = generate_summary(test_samples, model_before_tuning)[1]
 
+print("input:")
+print(test_samples)
 summaries_after_tuning = generate_summary(test_samples, model)[1]
+print("after tuning: ")
+print(summaries_after_tuning)
+summaries_after_tuning = generate_summary(train_data_txt, model)[1]
 print(summaries_after_tuning)
 """print(
     tabulate(
