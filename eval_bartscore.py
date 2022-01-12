@@ -35,6 +35,29 @@ def score(outputs, indices):
     return sum(outputs)/len(outputs)
 
 
+def eval_and_sort(golds, outputs):
+    comparisons = []
+    for file in os.listdir(golds):
+        comparisons.append((file.split(".txt")[0], *read_lines(golds + "/" + file)))
+
+    workers = []
+    for file in os.listdir(outputs):
+        workers.append([file.split(".txt")[0], read_lines(outputs + "/" + file)[0]])
+
+
+    for worker in workers:
+        print(worker[0] + "\t", end = "")
+        scores = []
+        for comp in comparisons:
+            scores.append(score(bart_scorer.score(comp[1], worker[1]), comp[2]))
+            print(str(scores[-1]) + "\t", end = "")
+        print()
+        worker.append(sum(scores)/len(scores))
+
+    print(sorted(workers, key=lambda x: - x[-1]))
+
+
+
 def eval_all(golds, outputs):
     invalid = ['I ', ' we ', ' me ', ' I', ' you', ':)', '!',] # '?', '"']
     comparisons = []
@@ -43,7 +66,7 @@ def eval_all(golds, outputs):
 
     workers = []
     for file in os.listdir(outputs):
-        workers.append((file.split(".txt")[0], read_lines(outputs + "/" + file)[0]))
+        workers.append([file.split(".txt")[0], read_lines(outputs + "/" + file)[0]])
 
     for comper in comparisons:
         print(comper[0] + "\t", end="")
@@ -108,4 +131,7 @@ print(score(bart_scorer.score(orig, worker2), indices))
 print("w3 and orig:")
 print(score(bart_scorer.score(orig, worker3), indices))
 """
-eval_all('mturk_bartscore/new_pilot/comparison_files', 'mturk_bartscore/new_pilot/annotator_out')
+eval_and_sort('model_eval/gold', 'model_eval/models')
+    #'mturk_bartscore/new_pilot/comparison_files', 'mturk_bartscore/new_pilot/annotator_out')
+
+#eval_all('model_eval/gold', 'model_eval/models')

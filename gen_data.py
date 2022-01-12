@@ -1,5 +1,24 @@
 original_count = 373
 
+def add_speaker_sep(train, test):
+
+    test["original"] = sep_list(test["original"])
+    test["shifted"] = sep_list(test["shifted"])
+
+    train["original"] = sep_list(train["original"])
+    train["shifted"] = sep_list(train["shifted"])
+
+    return train, test
+
+def sep_list(convolist):
+    seplist = []
+    for convo in convolist:
+        sep_convo = ""
+        for line in convo.split('\n'):
+            sep_convo += "<SPEAKERSTART> " + line + " <SPEAKEREND> "
+        seplist.append(sep_convo)
+    return seplist
+
 def data_extraction(para = False):
     import random
 
@@ -360,3 +379,5 @@ def data_extraction_masking():
     data['test'] = test
 
     return train, test
+
+print(add_speaker_sep(*data_extraction_aqa()))

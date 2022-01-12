@@ -17,7 +17,7 @@ import nltk
 from datetime import datetime
 import wandb
 
-from gen_data import data_extraction, data_extraction_aqa, data_extraction_masking
+from gen_data import data_extraction, data_extraction_aqa, data_extraction_masking, add_speaker_sep
 wandb.init(group="gormley_lab", project="perspective-shift-baselines")
 encoder_max_length = 256
 decoder_max_length = 256
@@ -27,7 +27,7 @@ model_name = "facebook/bart-base"
 model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-train_data, test_data = data_extraction_masking()
+train_data, test_data = add_speaker_sep(*data_extraction_aqa())
 nltk.download("punkt", quiet=True)
 metric = datasets.load_metric("rouge")
 
@@ -118,8 +118,8 @@ training_args = Seq2SeqTrainingArguments(
     num_train_epochs=NUM_EPOCHS,  # demo
     do_train=True,
     do_eval=True,
-    per_device_train_batch_size=8, #32,  # demo
-    per_device_eval_batch_size=8, #32,
+    per_device_train_batch_size=4,#8, #32,  # demo
+    per_device_eval_batch_size=4,# #32,
     # learning_rate=3e-05,
     warmup_steps=WARMUP_STEPS,
     weight_decay=0.1,
